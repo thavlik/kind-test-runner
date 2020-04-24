@@ -41,3 +41,13 @@ docker run -it \
 # tests, etc...
 kind export kubeconfig --name test
 ```
+
+For those on Windows/WSL, the docker.sock mount path requires this additional forward slash:
+```
+docker_sock=/var/run/docker.sock
+if grep -qEi "(Microsoft|WSL)" /proc/version &>/dev/null; then
+  docker_sock="/${docker_sock}"
+fi
+
+# docker run ... -v $docker_sock:/var/run/docker.sock ...
+```
