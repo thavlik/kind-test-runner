@@ -54,3 +54,6 @@ fi
 
 # docker run ... -v $docker_sock:/var/run/docker.sock ...
 ```
+
+## TODO
+- Kubernetes termination hook support
