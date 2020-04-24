@@ -1,9 +1,12 @@
-# Notes
+# Kind Test Runner
+Creates a kind cluster and scopes it to a Docker container. Useful for e2e testing, CI, etc.
 
+## Notes
 - Must run as privileged with host networking
 - $TESTPATH, if defined, is executed after the cluster starts.
 - NO_DELETE=0 will scope the cluster to the lifetime of the container
-### Example
+
+## Example
 #### Dockerfile
 ```
 FROM thavlik/kind-test-runner:latest
