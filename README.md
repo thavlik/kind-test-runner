@@ -3,9 +3,8 @@
 - Must run as privileged with host networking
 - $TESTPATH, if defined, is executed after the cluster starts.
 - NO_DELETE=0 will scope the cluster to the lifetime of the container
-
 ### Example
-
+#### Dockerfile
 ```
 FROM thavlik/kind-test-runner:latest
 WORKDIR /test
@@ -14,7 +13,17 @@ COPY manifest manifest                    # contains your yaml
 COPY scripts scripts                      # contains bash scripts
 ENV TESTPATH=/test/scripts/run-e2e-tests
 ```
+Note that alternatively, you can mount manifests in the container instead of baking them into the image.
 
+#### scripts/run-e2e-tests
+```
+#!/bin/bash
+kubectl apply -f ../crds/               # Apply the CRDs
+kubectl apply -f ../manifest/test.yaml  # Create test resources
+```
+
+#### Running
+On your host machine:
 ```
 docker build -t my-kind-test . # use above Dockerfile
 docker run -it \
