@@ -1,0 +1,42 @@
+#!/bin/bash
+set -euo pipefail
+pod=$1
+while :
+do
+    set +e
+    if [[ -n $(kubectl get pod $pod -o yaml 2>/dev/null | grep ErrImagePull) ]]; then
+        echo "Pod $pod failed to pull image:"
+        kubectl describe pod $pod
+        exit 1
+    fi
+    set -e
+    phase=$(kubectl get pod $pod -o yaml 2>/dev/null | grep phase: | awk '{print $2}')
+    set -e
+    if [ -z "$phase" ]; then
+        echo "Pod $pod not found"
+    fi
+    echo "Pod.Phase=$phase"
+    if [[ $phase == 'Pending' \
+        || $phase == 'ContainerCreating' \
+        || $phase == 'Terminating' ]]; then
+        kubectl describe pod $pod | tail
+        echo "Notice: you can ignore FailedScheduling while the cluster is starting."
+        sleep 5s
+    elif [[ $phase == 'Running' \
+        || $phase == 'Completed' \
+        || $phase == 'Succeeded' \
+        || $phase == 'Failed' \
+        || $phase == 'Error' ]]; then
+        exit 0
+    else
+        echo "Unexpected phase \"$phase\", aborting..."
+        kubectl get pod -o yaml $pod
+        kubectl describe pod $pod
+        kubectl logs -f $pod
+        #exitCode=$(kubectl get pod $pod -o yaml 2>/dev/null | grep exitCode: | awk '{print $2}')
+        #if [[ -n $exitCode ]]; then
+        #    exit $exitCode
+        #fi
+        exit 1
+    fi
+done

@@ -1,0 +1,41 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")"
+
+echo "TESTPATH=${TESTPATH:-}"
+echo "CLUSTER_NAME=${CLUSTER_NAME}"
+
+# It's not necessary to give the registry credentials to the
+# container running kind. We only need it to pull the builder
+# image. This is kept here for debugging purposes and clarity.
+#echo "Logging in as $DOCKER_USERNAME"
+#echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin
+
+function finish {
+  if [[ -z "${NO_DELETE:-}" ]]; then
+    # Clean up the cluster on exit
+    kind delete cluster --name $CLUSTER_NAME -q  
+  fi
+}
+trap finish EXIT
+
+kind get clusters
+
+if [[ -z "${NO_DELETE:-}" ]]; then
+  # Delete the cluster if it already exists (e.g. fail to cleanup)
+  echo "Using transient cluster. Set NO_DELETE=1 to keep and reuse the cluster."
+  kind delete cluster --name $CLUSTER_NAME -v 9 || true 
+else
+  echo "NO_DELETE was specified. Using long-running cluster..."
+fi
+
+# Run the setup script
+chmod +x ./setup
+./setup
+
+if [ -n "$(echo ${TESTPATH:-})" ]; then
+  # Run the test script
+  $TESTPATH
+else
+  echo "No test script was specified. Define TESTPATH to run a script upon entry."
+fi

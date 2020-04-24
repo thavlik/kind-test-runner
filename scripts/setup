@@ -1,0 +1,43 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")"
+
+# Ensure the docker registry is up and running.
+# This will also export the appropriate environment variables.
+ensure-registry-running
+
+if [[ -n "$(kind get clusters | grep $CLUSTER_NAME)" ]]; then
+  echo "Cluster '$CLUSTER_NAME' already exists"
+  kind export kubeconfig --name $CLUSTER_NAME
+else
+  echo "Creating cluster $CLUSTER_NAME"
+  reg_name='kind-registry'
+  reg_ip="$(docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
+  reg_port='5000'
+  cat <<EOF | kind create cluster --name "${CLUSTER_NAME}" --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+containerdConfigPatches: 
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${reg_port}"]
+    endpoint = ["http://${reg_ip}:${reg_port}"]
+EOF
+fi
+
+# Create RBAC unless asked otherwise
+if [ -z "${NO_RBAC+1}" ]; then
+  echo "Creating RBAC resources..."
+  kubectl apply -f /manifest/rbac.yaml
+fi
+
+if [ -n "${DOCKER_USERNAME+1}" ]; then
+  # Create a regcred if it doesn't exist
+  if [[ -z $(kubectl get secret | grep regcred) ]]; then
+    kubectl create secret docker-registry regcred \
+        --docker-server=https://index.docker.io/v1/ \
+        --docker-username=$DOCKER_USERNAME \
+        --docker-password=$DOCKER_PASSWORD
+  else
+    echo "secret/regcred already exists"
+  fi
+fi
