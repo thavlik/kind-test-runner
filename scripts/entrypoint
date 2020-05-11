@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-echo "TESTPATH=${TESTPATH:-}"
+echo "ENTRYPOINT=${ENTRYPOINT:-}"
 echo "CLUSTER_NAME=${CLUSTER_NAME}"
 
 # It's not necessary to give the registry credentials to the
@@ -33,9 +33,9 @@ fi
 chmod +x ./setup
 ./setup
 
-if [ -n "$(echo ${TESTPATH:-})" ]; then
-  # Run the test script
-  $TESTPATH
+if [ -n "$(echo ${ENTRYPOINT:-})" ]; then
+  # Run the entrypoint
+  $ENTRYPOINT
 else
-  echo "No test script was specified. Define TESTPATH to run a script upon entry."
+  echo "No test script was specified. Define ENTRYPOINT to run a script upon entry."
 fi

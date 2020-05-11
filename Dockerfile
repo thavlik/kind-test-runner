@@ -1,7 +1,7 @@
 FROM docker:dind
 
-ENV KIND=v0.7.0
-ENV KUBECTL=v1.17.0
+ENV KIND=v0.8.1
+ENV KUBECTL=v1.18.0
 ENV HELM=v3.1.2
 
 RUN apk add --no-cache \
